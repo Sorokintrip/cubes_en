@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merge Cubes Game</title>
+    <title>EN Cubes Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,7 +23,7 @@
         .game-container {
             display: grid;
             grid-template-columns: repeat(6, 50px);
-            grid-template-rows: repeat(10, 50px);
+            grid-template-rows: repeat(9, 50px);
             gap: 5px;
             margin-bottom: 20px;
         }
@@ -111,6 +111,7 @@
     </style>
 </head>
 <body>
+    <h1> Encounter Cubes Game</h1>
     <div class="score">Счёт: <span id="score">0</span></div>
     <div class="game-container" id="game-grid"></div>
     <div class="controls">
@@ -127,7 +128,7 @@
             const coordinatesBtn = document.getElementById('coordinates-btn');
             const messageElement = document.getElementById('message');
             
-            const rows = 10;
+            const rows = 9;
             const cols = 6;
             let score = 0;
             let selectedCube = null;
