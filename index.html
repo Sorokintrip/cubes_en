@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merge Cubes Game</title>
+    <title>Merge Cubes Game1</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -111,7 +111,6 @@
     </style>
 </head>
 <body>
-    <h1>Merge Cubes</h1>
     <div class="score">Счёт: <span id="score">0</span></div>
     <div class="game-container" id="game-grid"></div>
     <div class="controls">
@@ -134,6 +133,7 @@
             let selectedCube = null;
             let gridState = Array(rows).fill().map(() => Array(cols).fill(null));
             let inactivityTimer;
+            let coordinatesBtnShown = false;
             
             // Инициализация игры
             function initGame() {
@@ -142,6 +142,7 @@
                 scoreElement.textContent = score;
                 messageElement.textContent = '';
                 coordinatesBtn.style.display = 'none';
+                coordinatesBtnShown = false;
                 gridState = Array(rows).fill().map(() => Array(cols).fill(null));
                 
                 // Создаем ячейки и заполняем кубиками с числом 2
@@ -185,7 +186,9 @@
             
             // Обработка клика по кубику
             function handleCubeClick(e) {
-                resetInactivityTimer();
+                if (!coordinatesBtnShown) {
+                    resetInactivityTimer();
+                }
                 const cube = e.target;
                 const row = parseInt(cube.dataset.row);
                 const col = parseInt(cube.dataset.col);
@@ -284,25 +287,34 @@
             
             // Таймер бездействия
             function resetInactivityTimer() {
+                if (coordinatesBtnShown) return;
+                
                 clearTimeout(inactivityTimer);
-                coordinatesBtn.style.display = 'none';
                 
                 inactivityTimer = setTimeout(() => {
                     coordinatesBtn.style.display = 'inline-block';
+                    coordinatesBtnShown = true;
                 }, 30000); // 30 секунд бездействия
             }
             
             // Отслеживание активности
-            document.addEventListener('mousemove', resetInactivityTimer);
-            document.addEventListener('touchstart', resetInactivityTimer);
-            document.addEventListener('keydown', resetInactivityTimer);
+            document.addEventListener('mousemove', () => {
+                if (!coordinatesBtnShown) resetInactivityTimer();
+            });
+            document.addEventListener('touchstart', () => {
+                if (!coordinatesBtnShown) resetInactivityTimer();
+            });
+            document.addEventListener('keydown', () => {
+                if (!coordinatesBtnShown) resetInactivityTimer();
+            });
             
             // Кнопка новой игры
             resetBtn.addEventListener('click', initGame);
             
             // Кнопка координат
-            coordinatesBtn.addEventListener('click', () => {
-                window.location.href = "http://kgd.en.cx";
+            coordinatesBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.open("http://kgd.en.cx", "_blank");
             });
             
             // Запуск игры
