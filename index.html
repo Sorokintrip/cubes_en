@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merge Cubes Game1</title>
+    <title>Merge Cubes Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,6 +12,7 @@
             align-items: center;
             background-color: #f0f0f0;
             padding: 20px;
+            margin: 0;
         }
         
         h1 {
@@ -21,15 +22,15 @@
         
         .game-container {
             display: grid;
-            grid-template-columns: repeat(6, 60px);
-            grid-template-rows: repeat(10, 60px);
+            grid-template-columns: repeat(6, 50px);
+            grid-template-rows: repeat(10, 50px);
             gap: 5px;
             margin-bottom: 20px;
         }
         
         .cell {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             background-color: #ddd;
             border-radius: 5px;
             display: flex;
@@ -39,14 +40,14 @@
         }
         
         .cube {
-            width: 50px;
-            height: 50px;
+            width: 45px;
+            height: 45px;
             background-color: #ff9a9e;
             border-radius: 5px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: white;
             cursor: pointer;
@@ -69,6 +70,7 @@
         
         .controls {
             margin-top: 20px;
+            text-align: center;
         }
         
         button {
@@ -91,6 +93,21 @@
             font-weight: bold;
             margin-bottom: 20px;
         }
+        
+        .message {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+        
+        #coordinates-btn {
+            background-color: #2196F3;
+        }
+        
+        #coordinates-btn:hover {
+            background-color: #0b7dda;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +116,8 @@
     <div class="game-container" id="game-grid"></div>
     <div class="controls">
         <button id="reset-btn">Новая игра</button>
+        <button id="coordinates-btn" style="display: none;">КООРДИНАТЫ</button>
+        <div class="message" id="message"></div>
     </div>
 
     <script>
@@ -106,21 +125,26 @@
             const grid = document.getElementById('game-grid');
             const scoreElement = document.getElementById('score');
             const resetBtn = document.getElementById('reset-btn');
+            const coordinatesBtn = document.getElementById('coordinates-btn');
+            const messageElement = document.getElementById('message');
             
             const rows = 10;
             const cols = 6;
             let score = 0;
             let selectedCube = null;
             let gridState = Array(rows).fill().map(() => Array(cols).fill(null));
+            let inactivityTimer;
             
             // Инициализация игры
             function initGame() {
                 grid.innerHTML = '';
                 score = 0;
                 scoreElement.textContent = score;
+                messageElement.textContent = '';
+                coordinatesBtn.style.display = 'none';
                 gridState = Array(rows).fill().map(() => Array(cols).fill(null));
                 
-                // Создаем пустые ячейки
+                // Создаем ячейки и заполняем кубиками с числом 2
                 for (let i = 0; i < rows; i++) {
                     for (let j = 0; j < cols; j++) {
                         const cell = document.createElement('div');
@@ -128,30 +152,13 @@
                         cell.dataset.row = i;
                         cell.dataset.col = j;
                         grid.appendChild(cell);
+                        
+                        addCube(i, j, 2);
                     }
                 }
                 
-                // Добавляем 2 начальных кубика
-                addRandomCube();
-                addRandomCube();
-            }
-            
-            // Добавляет кубик в случайное пустое место
-            function addRandomCube() {
-                const emptyCells = [];
-                
-                for (let i = 0; i < rows; i++) {
-                    for (let j = 0; j < cols; j++) {
-                        if (gridState[i][j] === null) {
-                            emptyCells.push({ row: i, col: j });
-                        }
-                    }
-                }
-                
-                if (emptyCells.length > 0) {
-                    const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                    addCube(randomCell.row, randomCell.col, 2);
-                }
+                // Сбрасываем таймер бездействия
+                resetInactivityTimer();
             }
             
             // Добавляет кубик на поле
@@ -178,24 +185,22 @@
             
             // Обработка клика по кубику
             function handleCubeClick(e) {
+                resetInactivityTimer();
                 const cube = e.target;
                 const row = parseInt(cube.dataset.row);
                 const col = parseInt(cube.dataset.col);
                 
                 if (selectedCube) {
-                    // Если кликнули на тот же кубик — снимаем выделение
                     if (selectedCube === cube) {
                         cube.style.transform = 'scale(1)';
                         selectedCube = null;
                         return;
                     }
                     
-                    // Пытаемся переместить кубик
                     moveCube(selectedCube, row, col);
                     selectedCube.style.transform = 'scale(1)';
                     selectedCube = null;
                 } else {
-                    // Выделяем кубик
                     selectedCube = cube;
                     cube.style.transform = 'scale(1.1)';
                 }
@@ -207,7 +212,6 @@
                 const currentCol = parseInt(cube.dataset.col);
                 const value = parseInt(cube.dataset.value);
                 
-                // Проверка: можно ли двигаться только в соседние клетки
                 const isAdjacent = 
                     (Math.abs(currentRow - targetRow) === 1 && currentCol === targetCol) ||
                     (Math.abs(currentCol - targetCol) === 1 && currentRow === targetRow);
@@ -217,7 +221,7 @@
                 const targetCube = gridState[targetRow][targetCol];
                 
                 if (targetCube === null) {
-                    // Перемещаем в пустую клетку
+                    // Перемещаем кубик
                     gridState[currentRow][currentCol] = null;
                     gridState[targetRow][targetCol] = {
                         element: cube,
@@ -230,13 +234,13 @@
                     const targetCell = document.querySelector(`.cell[data-row="${targetRow}"][data-col="${targetCol}"]`);
                     targetCell.appendChild(cube);
                     
-                    // Добавляем 2 новых кубика после хода
+                    // Заполняем пустое место новым кубиком
                     setTimeout(() => {
-                        addRandomCube();
-                        addRandomCube();
+                        addCube(currentRow, currentCol, 2);
+                        checkGameOver();
                     }, 200);
                 } else if (targetCube.value === value) {
-                    // Объединение кубиков
+                    // Слияние кубиков
                     const newValue = value * 2;
                     score += newValue;
                     scoreElement.textContent = score;
@@ -247,19 +251,59 @@
                     gridState[currentRow][currentCol] = null;
                     gridState[targetRow][targetCol] = null;
                     
-                    // Добавляем новый объединённый кубик
                     setTimeout(() => {
+                        // Добавляем объединенный кубик
                         addCube(targetRow, targetCol, newValue);
                         
-                        // Добавляем 2 новых кубика после слияния
-                        addRandomCube();
-                        addRandomCube();
+                        // Заполняем пустое место новым кубиком
+                        addCube(currentRow, currentCol, 2);
+                        
+                        checkGameOver();
                     }, 200);
                 }
             }
             
-            // Кнопка сброса
+            // Проверка на конец игры
+            function checkGameOver() {
+                // Проверяем есть ли возможные слияния
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        const currentValue = gridState[i][j].value;
+                        
+                        if (i > 0 && gridState[i-1][j].value === currentValue) return false;
+                        if (i < rows-1 && gridState[i+1][j].value === currentValue) return false;
+                        if (j > 0 && gridState[i][j-1].value === currentValue) return false;
+                        if (j < cols-1 && gridState[i][j+1].value === currentValue) return false;
+                    }
+                }
+                
+                // Если нет ходов - конец игры
+                messageElement.textContent = "Вы где-то ошиблись. Попробуйте заново";
+                return true;
+            }
+            
+            // Таймер бездействия
+            function resetInactivityTimer() {
+                clearTimeout(inactivityTimer);
+                coordinatesBtn.style.display = 'none';
+                
+                inactivityTimer = setTimeout(() => {
+                    coordinatesBtn.style.display = 'inline-block';
+                }, 30000); // 30 секунд бездействия
+            }
+            
+            // Отслеживание активности
+            document.addEventListener('mousemove', resetInactivityTimer);
+            document.addEventListener('touchstart', resetInactivityTimer);
+            document.addEventListener('keydown', resetInactivityTimer);
+            
+            // Кнопка новой игры
             resetBtn.addEventListener('click', initGame);
+            
+            // Кнопка координат
+            coordinatesBtn.addEventListener('click', () => {
+                window.location.href = "http://kgd.en.cx";
+            });
             
             // Запуск игры
             initGame();
