@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,7 +21,7 @@
         
         .game-container {
             display: grid;
-            grid-template-columns: repeat(5, 60px);
+            grid-template-columns: repeat(6, 60px);
             grid-template-rows: repeat(10, 60px);
             gap: 5px;
             margin-bottom: 20px;
@@ -95,10 +95,10 @@
 </head>
 <body>
     <h1>Merge Cubes</h1>
-    <div class="score">Score: <span id="score">0</span></div>
+    <div class="score">Счёт: <span id="score">0</span></div>
     <div class="game-container" id="game-grid"></div>
     <div class="controls">
-        <button id="reset-btn">Reset Game</button>
+        <button id="reset-btn">Новая игра</button>
     </div>
 
     <script>
@@ -108,19 +108,19 @@
             const resetBtn = document.getElementById('reset-btn');
             
             const rows = 10;
-            const cols = 5;
+            const cols = 6;
             let score = 0;
             let selectedCube = null;
             let gridState = Array(rows).fill().map(() => Array(cols).fill(null));
             
-            // Initialize the game
+            // Инициализация игры
             function initGame() {
                 grid.innerHTML = '';
                 score = 0;
                 scoreElement.textContent = score;
                 gridState = Array(rows).fill().map(() => Array(cols).fill(null));
                 
-                // Create grid cells
+                // Создаем пустые ячейки
                 for (let i = 0; i < rows; i++) {
                     for (let j = 0; j < cols; j++) {
                         const cell = document.createElement('div');
@@ -128,14 +128,33 @@
                         cell.dataset.row = i;
                         cell.dataset.col = j;
                         grid.appendChild(cell);
-                        
-                        // Add a cube with value 2 to each cell initially
-                        addCube(i, j, 2);
                     }
+                }
+                
+                // Добавляем 2 начальных кубика
+                addRandomCube();
+                addRandomCube();
+            }
+            
+            // Добавляет кубик в случайное пустое место
+            function addRandomCube() {
+                const emptyCells = [];
+                
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        if (gridState[i][j] === null) {
+                            emptyCells.push({ row: i, col: j });
+                        }
+                    }
+                }
+                
+                if (emptyCells.length > 0) {
+                    const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                    addCube(randomCell.row, randomCell.col, 2);
                 }
             }
             
-            // Add a cube to the grid
+            // Добавляет кубик на поле
             function addCube(row, col, value) {
                 if (gridState[row][col] !== null) return;
                 
@@ -157,52 +176,48 @@
                 };
             }
             
-            // Handle cube selection
+            // Обработка клика по кубику
             function handleCubeClick(e) {
                 const cube = e.target;
                 const row = parseInt(cube.dataset.row);
                 const col = parseInt(cube.dataset.col);
                 
                 if (selectedCube) {
-                    // If clicking the same cube again, deselect it
+                    // Если кликнули на тот же кубик — снимаем выделение
                     if (selectedCube === cube) {
                         cube.style.transform = 'scale(1)';
                         selectedCube = null;
                         return;
                     }
                     
-                    // Try to move the selected cube to this position
+                    // Пытаемся переместить кубик
                     moveCube(selectedCube, row, col);
                     selectedCube.style.transform = 'scale(1)';
                     selectedCube = null;
                 } else {
-                    // Select this cube
+                    // Выделяем кубик
                     selectedCube = cube;
                     cube.style.transform = 'scale(1.1)';
                 }
             }
             
-            // Move a cube to a new position
+            // Перемещение кубика
             function moveCube(cube, targetRow, targetCol) {
                 const currentRow = parseInt(cube.dataset.row);
                 const currentCol = parseInt(cube.dataset.col);
                 const value = parseInt(cube.dataset.value);
                 
-                // Check if target position is the same as current
-                if (currentRow === targetRow && currentCol === targetCol) return;
-                
-                // Check if target position is adjacent (up, down, left, right)
+                // Проверка: можно ли двигаться только в соседние клетки
                 const isAdjacent = 
                     (Math.abs(currentRow - targetRow) === 1 && currentCol === targetCol) ||
                     (Math.abs(currentCol - targetCol) === 1 && currentRow === targetRow);
                 
                 if (!isAdjacent) return;
                 
-                // Check if target position is empty or has a cube with the same value
                 const targetCube = gridState[targetRow][targetCol];
                 
                 if (targetCube === null) {
-                    // Move to empty cell
+                    // Перемещаем в пустую клетку
                     gridState[currentRow][currentCol] = null;
                     gridState[targetRow][targetCol] = {
                         element: cube,
@@ -212,40 +227,41 @@
                     cube.dataset.row = targetRow;
                     cube.dataset.col = targetCol;
                     
-                    // Update position in DOM
                     const targetCell = document.querySelector(`.cell[data-row="${targetRow}"][data-col="${targetCol}"]`);
                     targetCell.appendChild(cube);
                     
-                    // Add a new cube to the empty cell
+                    // Добавляем 2 новых кубика после хода
                     setTimeout(() => {
-                        addCube(currentRow, currentCol, 2);
+                        addRandomCube();
+                        addRandomCube();
                     }, 200);
                 } else if (targetCube.value === value) {
-                    // Merge cubes
+                    // Объединение кубиков
                     const newValue = value * 2;
                     score += newValue;
                     scoreElement.textContent = score;
                     
-                    // Remove both cubes
+                    // Удаляем старые кубики
                     cube.remove();
                     targetCube.element.remove();
                     gridState[currentRow][currentCol] = null;
                     gridState[targetRow][targetCol] = null;
                     
-                    // Add merged cube
+                    // Добавляем новый объединённый кубик
                     setTimeout(() => {
                         addCube(targetRow, targetCol, newValue);
                         
-                        // Add a new cube to the empty cell
-                        addCube(currentRow, currentCol, 2);
+                        // Добавляем 2 новых кубика после слияния
+                        addRandomCube();
+                        addRandomCube();
                     }, 200);
                 }
             }
             
-            // Reset the game
+            // Кнопка сброса
             resetBtn.addEventListener('click', initGame);
             
-            // Start the game
+            // Запуск игры
             initGame();
         });
     </script>
