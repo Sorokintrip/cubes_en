@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge Cubes Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(10, 60px);
+            grid-template-rows: repeat(5, 60px);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .cell {
+            width: 60px;
+            height: 60px;
+            background-color: #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .cube {
+            width: 50px;
+            height: 50px;
+            background-color: #ff9a9e;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            position: absolute;
+            transition: transform 0.2s;
+        }
+        
+        .cube-2 { background-color: #ff9a9e; }
+        .cube-4 { background-color: #fad0c4; color: #333; }
+        .cube-8 { background-color: #fbc2eb; }
+        .cube-16 { background-color: #a6c1ee; }
+        .cube-32 { background-color: #84fab0; color: #333; }
+        .cube-64 { background-color: #8fd3f4; }
+        .cube-128 { background-color: #ffcb77; color: #333; }
+        .cube-256 { background-color: #17c3b2; }
+        .cube-512 { background-color: #fe6d73; }
+        .cube-1024 { background-color: #227c9d; }
+        .cube-2048 { background-color: #ffcb77; color: #333; font-size: 16px; }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .score {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Merge Cubes</h1>
+    <div class="score">Score: <span id="score">0</span></div>
+    <div class="game-container" id="game-grid"></div>
+    <div class="controls">
+        <button id="reset-btn">Reset Game</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('game-grid');
+            const scoreElement = document.getElementById('score');
+            const resetBtn = document.getElementById('reset-btn');
+            
+            const rows = 5;
+            const cols = 10;
+            let score = 0;
+            let selectedCube = null;
+            let gridState = Array(rows).fill().map(() => Array(cols).fill(null));
+            
+            // Initialize the game
+            function initGame() {
+                grid.innerHTML = '';
+                score = 0;
+                scoreElement.textContent = score;
+                gridState = Array(rows).fill().map(() => Array(cols).fill(null));
+                
+                // Create grid cells
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        grid.appendChild(cell);
+                        
+                        // Add a cube with value 2 to each cell initially
+                        addCube(i, j, 2);
+                    }
+                }
+            }
+            
+            // Add a cube to the grid
+            function addCube(row, col, value) {
+                if (gridState[row][col] !== null) return;
+                
+                const cube = document.createElement('div');
+                cube.className = `cube cube-${value}`;
+                cube.textContent = value;
+                cube.dataset.value = value;
+                cube.dataset.row = row;
+                cube.dataset.col = col;
+                
+                cube.addEventListener('click', handleCubeClick);
+                
+                const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+                cell.appendChild(cube);
+                
+                gridState[row][col] = {
+                    element: cube,
+                    value: value
+                };
+            }
+            
+            // Handle cube selection
+            function handleCubeClick(e) {
+                const cube = e.target;
+                const row = parseInt(cube.dataset.row);
+                const col = parseInt(cube.dataset.col);
+                
+                if (selectedCube) {
+                    // If clicking the same cube again, deselect it
+                    if (selectedCube === cube) {
+                        cube.style.transform = 'scale(1)';
+                        selectedCube = null;
+                        return;
+                    }
+                    
+                    // Try to move the selected cube to this position
+                    moveCube(selectedCube, row, col);
+                    selectedCube.style.transform = 'scale(1)';
+                    selectedCube = null;
+                } else {
+                    // Select this cube
+                    selectedCube = cube;
+                    cube.style.transform = 'scale(1.1)';
+                }
+            }
+            
+            // Move a cube to a new position
+            function moveCube(cube, targetRow, targetCol) {
+                const currentRow = parseInt(cube.dataset.row);
+                const currentCol = parseInt(cube.dataset.col);
+                const value = parseInt(cube.dataset.value);
+                
+                // Check if target position is the same as current
+                if (currentRow === targetRow && currentCol === targetCol) return;
+                
+                // Check if target position is adjacent (up, down, left, right)
+                const isAdjacent = 
+                    (Math.abs(currentRow - targetRow) === 1 && currentCol === targetCol) ||
+                    (Math.abs(currentCol - targetCol) === 1 && currentRow === targetRow);
+                
+                if (!isAdjacent) return;
+                
+                // Check if target position is empty or has a cube with the same value
+                const targetCube = gridState[targetRow][targetCol];
+                
+                if (targetCube === null) {
+                    // Move to empty cell
+                    gridState[currentRow][currentCol] = null;
+                    gridState[targetRow][targetCol] = {
+                        element: cube,
+                        value: value
+                    };
+                    
+                    cube.dataset.row = targetRow;
+                    cube.dataset.col = targetCol;
+                    
+                    // Update position in DOM
+                    const targetCell = document.querySelector(`.cell[data-row="${targetRow}"][data-col="${targetCol}"]`);
+                    targetCell.appendChild(cube);
+                    
+                    // Add a new cube to the empty cell
+                    setTimeout(() => {
+                        addCube(currentRow, currentCol, 2);
+                    }, 200);
+                } else if (targetCube.value === value) {
+                    // Merge cubes
+                    const newValue = value * 2;
+                    score += newValue;
+                    scoreElement.textContent = score;
+                    
+                    // Remove both cubes
+                    cube.remove();
+                    targetCube.element.remove();
+                    gridState[currentRow][currentCol] = null;
+                    gridState[targetRow][targetCol] = null;
+                    
+                    // Add merged cube
+                    setTimeout(() => {
+                        addCube(targetRow, targetCol, newValue);
+                        
+                        // Add a new cube to the empty cell
+                        addCube(currentRow, currentCol, 2);
+                    }, 200);
+                }
+            }
+            
+            // Reset the game
+            resetBtn.addEventListener('click', initGame);
+            
+            // Start the game
+            initGame();
+        });
+    </script>
+</body>
+</html>
